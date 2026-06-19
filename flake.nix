@@ -14,11 +14,11 @@
     homeModules = {
       emacs-twist = ./modules/home-manager.nix;
     };
-    templates = {
-      default = {
-        description = "A basic configuration for use-package";
-        path = ./template;
-      };
-    };
+#    templates = {
+#      default = {
+#        description = "A basic configuration for use-package";
+#        path = ./template;
+#      };
+#    };
   };
 }

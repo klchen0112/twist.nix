@@ -1,12 +1,13 @@
 {
   lib,
   runCommandLocal,
-  makeWrapper,
+  makeBinaryWrapper,
   writeText,
   buildEnv,
   emacs,
   lndir,
   texinfo,
+  stdenv,
   packageNames,
   elispPackages,
   executablePackages,
@@ -74,7 +75,7 @@ in
   {
     buildInputs = [lndir texinfo];
     propagatedBuildInputs = [emacs packageEnv] ++ executablePackages;
-    nativeBuildInputs = [makeWrapper];
+    nativeBuildInputs = [makeBinaryWrapper];
     # Support for nix run
     meta.mainProgram = "emacs";
 
@@ -187,4 +188,25 @@ in
         --set EMACSLOADPATH "$siteLisp:"
       fi
     done
+
+    ${lib.optionalString stdenv.isDarwin ''
+      if [ -d "${emacs}/Applications/Emacs.app" ]; then
+        mkdir -p $out/Applications/Emacs.app/Contents/MacOS
+        cp -r ${emacs}/Applications/Emacs.app/Contents/Info.plist \
+              ${emacs}/Applications/Emacs.app/Contents/PkgInfo \
+              ${emacs}/Applications/Emacs.app/Contents/Resources \
+              $out/Applications/Emacs.app/Contents
+
+        cp ${emacs}/Applications/Emacs.app/Contents/MacOS/Emacs \
+           $out/Applications/Emacs.app/Contents/MacOS/Emacs
+        chmod u+w $out/Applications/Emacs.app/Contents/MacOS/Emacs
+        wrapProgram $out/Applications/Emacs.app/Contents/MacOS/Emacs \
+          ${lib.optionalString (length executablePackages > 0) "--prefix PATH : ${lib.escapeShellArg (lib.makeBinPath executablePackages)}"} \
+          --prefix INFOPATH : ${emacs}/share/info:$out/share/info:${infoPath} \
+          ${
+      lib.optionalString nativeComp "--prefix EMACSNATIVELOADPATH : $nativeLisp:$nativeLoadPath"
+    } \
+          --set EMACSLOADPATH "$siteLisp:"
+      fi
+    ''}
   ''
